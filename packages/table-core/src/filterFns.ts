@@ -1,12 +1,18 @@
-import { FilterFn } from './features/Filters'
+import { FilterFn } from './features/ColumnFiltering'
 
 const includesString: FilterFn<any> = (
   row,
   columnId: string,
   filterValue: string
 ) => {
-  const search = filterValue.toLowerCase()
-  return Boolean(row.getValue<string>(columnId)?.toLowerCase().includes(search))
+  const search = filterValue?.toString()?.toLowerCase()
+  return Boolean(
+    row
+      .getValue<string | null>(columnId)
+      ?.toString()
+      ?.toLowerCase()
+      ?.includes(search)
+  )
 }
 
 includesString.autoRemove = (val: any) => testFalsey(val)
@@ -16,7 +22,9 @@ const includesStringSensitive: FilterFn<any> = (
   columnId: string,
   filterValue: string
 ) => {
-  return Boolean(row.getValue<string>(columnId)?.includes(filterValue))
+  return Boolean(
+    row.getValue<string | null>(columnId)?.toString()?.includes(filterValue)
+  )
 }
 
 includesStringSensitive.autoRemove = (val: any) => testFalsey(val)
@@ -27,7 +35,8 @@ const equalsString: FilterFn<any> = (
   filterValue: string
 ) => {
   return (
-    row.getValue<string>(columnId)?.toLowerCase() === filterValue.toLowerCase()
+    row.getValue<string | null>(columnId)?.toString()?.toLowerCase() ===
+    filterValue?.toLowerCase()
   )
 }
 
@@ -41,7 +50,7 @@ const arrIncludes: FilterFn<any> = (
   return row.getValue<unknown[]>(columnId)?.includes(filterValue)
 }
 
-arrIncludes.autoRemove = (val: any) => testFalsey(val) || !val?.length
+arrIncludes.autoRemove = (val: any) => testFalsey(val)
 
 const arrIncludesAll: FilterFn<any> = (
   row,

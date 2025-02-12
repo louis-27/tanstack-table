@@ -1,12 +1,11 @@
 <script lang="ts">
   import { writable } from 'svelte/store'
   import {
-    ColumnDef,
     createSvelteTable,
     flexRender,
     getCoreRowModel,
-    TableOptions,
   } from '@tanstack/svelte-table'
+  import type { ColumnDef, TableOptions } from '@tanstack/svelte-table'
   import './index.css'
 
   type Person = {
@@ -17,8 +16,6 @@
     status: string
     progress: number
   }
-
-  
 
   const defaultData: Person[] = [
     {
@@ -57,7 +54,7 @@
           cell: info => info.getValue(),
           footer: props => props.column.id,
         },
-         {
+        {
           accessorFn: row => row.lastName,
           id: 'lastName',
           cell: info => info.getValue(),
@@ -99,13 +96,11 @@
     },
   ]
 
-  const options = writable<TableOptions<Person>>(
-    {
-      data: defaultData,
-      columns: defaultColumns,
-      getCoreRowModel: getCoreRowModel(),
-    }
-  )
+  const options = writable<TableOptions<Person>>({
+    data: defaultData,
+    columns: defaultColumns,
+    getCoreRowModel: getCoreRowModel(),
+  })
 
   const rerender = () => {
     options.update(options => ({
@@ -125,7 +120,12 @@
           {#each headerGroup.headers as header}
             <th colSpan={header.colSpan}>
               {#if !header.isPlaceholder}
-                <svelte:component this={flexRender(header.column.columnDef.header, header.getContext())} />
+                <svelte:component
+                  this={flexRender(
+                    header.column.columnDef.header,
+                    header.getContext()
+                  )}
+                />
               {/if}
             </th>
           {/each}
@@ -137,7 +137,9 @@
         <tr>
           {#each row.getVisibleCells() as cell}
             <td>
-              <svelte:component this={flexRender(cell.column.columnDef.cell, cell.getContext())} />
+              <svelte:component
+                this={flexRender(cell.column.columnDef.cell, cell.getContext())}
+              />
             </td>
           {/each}
         </tr>
@@ -149,7 +151,12 @@
           {#each footerGroup.headers as header}
             <th colSpan={header.colSpan}>
               {#if !header.isPlaceholder}
-                <svelte:component this={flexRender(header.column.columnDef.footer, header.getContext())} />
+                <svelte:component
+                  this={flexRender(
+                    header.column.columnDef.footer,
+                    header.getContext()
+                  )}
+                />
               {/if}
             </th>
           {/each}

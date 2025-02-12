@@ -6,12 +6,13 @@ import {
   VisibilityOptions,
   VisibilityColumnDef,
   VisibilityRow,
-} from './features/Visibility'
+} from './features/ColumnVisibility'
 import {
+  ColumnOrderColumn,
   ColumnOrderInstance,
   ColumnOrderOptions,
   ColumnOrderTableState,
-} from './features/Ordering'
+} from './features/ColumnOrdering'
 import {
   ColumnPinningColumn,
   ColumnPinningColumnDef,
@@ -19,31 +20,44 @@ import {
   ColumnPinningOptions,
   ColumnPinningRow,
   ColumnPinningTableState,
-} from './features/Pinning'
+} from './features/ColumnPinning'
+import {
+  RowPinningInstance,
+  RowPinningOptions,
+  RowPinningRow,
+  RowPinningTableState,
+} from './features/RowPinning'
 import {
   CoreHeader,
   CoreHeaderGroup,
   HeaderContext,
   HeadersInstance,
 } from './core/headers'
+import { FacetedColumn, FacetedOptions } from './features/ColumnFaceting'
+import { GlobalFacetingInstance } from './features/GlobalFaceting'
 import {
-  FilterFn,
-  FiltersColumn,
-  FiltersColumnDef,
-  FiltersInstance,
-  FiltersOptions,
-  FiltersRow,
-  FiltersTableState,
-} from './features/Filters'
+  ColumnFiltersColumn,
+  ColumnFiltersColumnDef,
+  ColumnFiltersInstance,
+  ColumnFiltersOptions,
+  ColumnFiltersRow,
+  ColumnFiltersTableState,
+} from './features/ColumnFiltering'
+import {
+  GlobalFilterColumn,
+  GlobalFilterColumnDef,
+  GlobalFilterInstance,
+  GlobalFilterOptions,
+  GlobalFilterTableState,
+} from './features/GlobalFiltering'
 import {
   SortingColumn,
   SortingColumnDef,
   SortingInstance,
   SortingOptions,
   SortingTableState,
-} from './features/Sorting'
+} from './features/RowSorting'
 import {
-  CustomAggregationFns,
   GroupingCell,
   GroupingColumn,
   GroupingColumnDef,
@@ -51,13 +65,13 @@ import {
   GroupingOptions,
   GroupingRow,
   GroupingTableState,
-} from './features/Grouping'
+} from './features/ColumnGrouping'
 import {
   ExpandedInstance,
   ExpandedOptions,
   ExpandedTableState,
   ExpandedRow,
-} from './features/Expanding'
+} from './features/RowExpanding'
 import {
   ColumnSizingColumn,
   ColumnSizingColumnDef,
@@ -71,7 +85,7 @@ import {
   PaginationInstance,
   PaginationOptions,
   PaginationTableState,
-} from './features/Pagination'
+} from './features/RowPagination'
 import {
   RowSelectionInstance,
   RowSelectionOptions,
@@ -79,15 +93,38 @@ import {
   RowSelectionTableState,
 } from './features/RowSelection'
 import { CoreRow } from './core/row'
-import { DeepKeys, PartialKeys, UnionToIntersection } from './utils'
+import { PartialKeys, UnionToIntersection } from './utils'
 import { CellContext, CoreCell } from './core/cell'
 import { CoreColumn } from './core/column'
 
+export interface TableFeature<TData extends RowData = any> {
+  createCell?: (
+    cell: Cell<TData, unknown>,
+    column: Column<TData>,
+    row: Row<TData>,
+    table: Table<TData>
+  ) => void
+  createColumn?: (column: Column<TData, unknown>, table: Table<TData>) => void
+  createHeader?: (header: Header<TData, unknown>, table: Table<TData>) => void
+  createRow?: (row: Row<TData>, table: Table<TData>) => void
+  createTable?: (table: Table<TData>) => void
+  getDefaultColumnDef?: () => Partial<ColumnDef<TData, unknown>>
+  getDefaultOptions?: (
+    table: Table<TData>
+  ) => Partial<TableOptionsResolved<TData>>
+  getInitialState?: (initialState?: InitialTableState) => Partial<TableState>
+}
+
 export interface TableMeta<TData extends RowData> {}
+
 export interface ColumnMeta<TData extends RowData, TValue> {}
+
 export interface FilterMeta {}
+
 export interface FilterFns {}
+
 export interface SortingFns {}
+
 export interface AggregationFns {}
 
 export type Updater<T> = T | ((old: T) => T)
@@ -97,71 +134,91 @@ export type RowData = unknown | object | any[]
 
 export type AnyRender = (Comp: any, props: any) => any
 
-export type Table<TData extends RowData> = CoreInstance<TData> &
-  HeadersInstance<TData> &
-  VisibilityInstance<TData> &
-  ColumnOrderInstance<TData> &
-  ColumnPinningInstance<TData> &
-  FiltersInstance<TData> &
-  SortingInstance<TData> &
-  GroupingInstance<TData> &
-  ColumnSizingInstance &
-  ExpandedInstance<TData> &
-  PaginationInstance<TData> &
-  RowSelectionInstance<TData>
+export interface Table<TData extends RowData>
+  extends CoreInstance<TData>,
+    HeadersInstance<TData>,
+    VisibilityInstance<TData>,
+    ColumnOrderInstance<TData>,
+    ColumnPinningInstance<TData>,
+    RowPinningInstance<TData>,
+    ColumnFiltersInstance<TData>,
+    GlobalFilterInstance<TData>,
+    GlobalFacetingInstance<TData>,
+    SortingInstance<TData>,
+    GroupingInstance<TData>,
+    ColumnSizingInstance,
+    ExpandedInstance<TData>,
+    PaginationInstance<TData>,
+    RowSelectionInstance<TData> {}
 
-export type TableOptionsResolved<TData extends RowData> = CoreOptions<TData> &
-  VisibilityOptions &
-  ColumnOrderOptions &
-  ColumnPinningOptions &
-  FiltersOptions<TData> &
-  SortingOptions<TData> &
-  GroupingOptions &
-  ExpandedOptions<TData> &
-  ColumnSizingOptions &
-  PaginationOptions &
-  RowSelectionOptions<TData>
+interface FeatureOptions<TData extends RowData>
+  extends VisibilityOptions,
+    ColumnOrderOptions,
+    ColumnPinningOptions,
+    RowPinningOptions<TData>,
+    FacetedOptions<TData>,
+    ColumnFiltersOptions<TData>,
+    GlobalFilterOptions<TData>,
+    SortingOptions<TData>,
+    GroupingOptions,
+    ExpandedOptions<TData>,
+    ColumnSizingOptions,
+    PaginationOptions,
+    RowSelectionOptions<TData> {}
 
-export type TableOptions<TData extends RowData> = PartialKeys<
-  TableOptionsResolved<TData>,
-  'state' | 'onStateChange' | 'renderFallbackValue'
->
+export interface TableOptionsResolved<TData extends RowData>
+  extends CoreOptions<TData>,
+    FeatureOptions<TData> {}
 
-export type TableState = CoreTableState &
-  VisibilityTableState &
-  ColumnOrderTableState &
-  ColumnPinningTableState &
-  FiltersTableState &
-  SortingTableState &
-  ExpandedTableState &
-  GroupingTableState &
-  ColumnSizingTableState &
-  PaginationTableState &
-  RowSelectionTableState
+export interface TableOptions<TData extends RowData>
+  extends PartialKeys<
+    TableOptionsResolved<TData>,
+    'state' | 'onStateChange' | 'renderFallbackValue'
+  > {}
 
-export type InitialTableState = Partial<
-  CoreTableState &
-    VisibilityTableState &
-    ColumnOrderTableState &
-    ColumnPinningTableState &
-    FiltersTableState &
-    SortingTableState &
-    ExpandedTableState &
-    GroupingTableState &
-    ColumnSizingTableState &
-    PaginationInitialTableState &
-    RowSelectionTableState
->
+export interface TableState
+  extends CoreTableState,
+    VisibilityTableState,
+    ColumnOrderTableState,
+    ColumnPinningTableState,
+    RowPinningTableState,
+    ColumnFiltersTableState,
+    GlobalFilterTableState,
+    SortingTableState,
+    ExpandedTableState,
+    GroupingTableState,
+    ColumnSizingTableState,
+    PaginationTableState,
+    RowSelectionTableState {}
 
-export type Row<TData extends RowData> = CoreRow<TData> &
-  VisibilityRow<TData> &
-  ColumnPinningRow<TData> &
-  FiltersRow<TData> &
-  GroupingRow &
-  RowSelectionRow &
-  ExpandedRow
+interface CompleteInitialTableState
+  extends CoreTableState,
+    VisibilityTableState,
+    ColumnOrderTableState,
+    ColumnPinningTableState,
+    RowPinningTableState,
+    ColumnFiltersTableState,
+    GlobalFilterTableState,
+    SortingTableState,
+    ExpandedTableState,
+    GroupingTableState,
+    ColumnSizingTableState,
+    PaginationInitialTableState,
+    RowSelectionTableState {}
 
-export type RowModel<TData extends RowData> = {
+export interface InitialTableState extends Partial<CompleteInitialTableState> {}
+
+export interface Row<TData extends RowData>
+  extends CoreRow<TData>,
+    VisibilityRow<TData>,
+    ColumnPinningRow<TData>,
+    RowPinningRow,
+    ColumnFiltersRow<TData>,
+    GroupingRow,
+    RowSelectionRow,
+    ExpandedRow {}
+
+export interface RowModel<TData extends RowData> {
   rows: Row<TData>[]
   flatRows: Row<TData>[]
   rowsById: Record<string, Row<TData>>
@@ -180,12 +237,12 @@ export type StringOrTemplateHeader<TData, TValue> =
   | string
   | ColumnDefTemplate<HeaderContext<TData, TValue>>
 
-type StringHeaderIdentifier = {
+export interface StringHeaderIdentifier {
   header: string
   id?: string
 }
 
-type IdIdentifier<TData extends RowData, TValue> = {
+export interface IdIdentifier<TData extends RowData, TValue> {
   id: string
   header?: StringOrTemplateHeader<TData, TValue>
 }
@@ -196,55 +253,71 @@ type ColumnIdentifiers<TData extends RowData, TValue> =
 
 //
 
-export type ColumnDefBase<TData extends RowData, TValue = unknown> = {
+interface ColumnDefExtensions<TData extends RowData, TValue = unknown>
+  extends VisibilityColumnDef,
+    ColumnPinningColumnDef,
+    ColumnFiltersColumnDef<TData>,
+    GlobalFilterColumnDef,
+    SortingColumnDef<TData>,
+    GroupingColumnDef<TData, TValue>,
+    ColumnSizingColumnDef {}
+
+export interface ColumnDefBase<TData extends RowData, TValue = unknown>
+  extends ColumnDefExtensions<TData, TValue> {
   getUniqueValues?: AccessorFn<TData, unknown[]>
   footer?: ColumnDefTemplate<HeaderContext<TData, TValue>>
   cell?: ColumnDefTemplate<CellContext<TData, TValue>>
   meta?: ColumnMeta<TData, TValue>
-} & VisibilityColumnDef &
-  ColumnPinningColumnDef &
-  FiltersColumnDef<TData> &
-  SortingColumnDef<TData> &
-  GroupingColumnDef<TData, TValue> &
-  ColumnSizingColumnDef
+}
 
 //
 
-export type IdentifiedColumnDef<
-  TData extends RowData,
-  TValue = unknown
-> = ColumnDefBase<TData, TValue> & {
+export interface IdentifiedColumnDef<TData extends RowData, TValue = unknown>
+  extends ColumnDefBase<TData, TValue> {
   id?: string
   header?: StringOrTemplateHeader<TData, TValue>
 }
 
 export type DisplayColumnDef<
   TData extends RowData,
-  TValue = unknown
+  TValue = unknown,
 > = ColumnDefBase<TData, TValue> & ColumnIdentifiers<TData, TValue>
+
+interface GroupColumnDefBase<TData extends RowData, TValue = unknown>
+  extends ColumnDefBase<TData, TValue> {
+  columns?: ColumnDef<TData, any>[]
+}
 
 export type GroupColumnDef<
   TData extends RowData,
-  TValue = unknown
-> = ColumnDefBase<TData, TValue> &
-  ColumnIdentifiers<TData, TValue> & {
-    columns?: ColumnDef<TData, any>[]
-  }
+  TValue = unknown,
+> = GroupColumnDefBase<TData, TValue> & ColumnIdentifiers<TData, TValue>
+
+export interface AccessorFnColumnDefBase<
+  TData extends RowData,
+  TValue = unknown,
+> extends ColumnDefBase<TData, TValue> {
+  accessorFn: AccessorFn<TData, TValue>
+}
 
 export type AccessorFnColumnDef<
   TData extends RowData,
-  TValue = unknown
-> = ColumnDefBase<TData, TValue> &
-  ColumnIdentifiers<TData, TValue> & {
-    accessorFn: AccessorFn<TData, TValue>
-  }
+  TValue = unknown,
+> = AccessorFnColumnDefBase<TData, TValue> & ColumnIdentifiers<TData, TValue>
 
-export type AccessorKeyColumnDef<TData extends RowData, TValue = unknown> = {
+export interface AccessorKeyColumnDefBase<
+  TData extends RowData,
+  TValue = unknown,
+> extends ColumnDefBase<TData, TValue> {
   id?: string
-} & Partial<ColumnIdentifiers<TData, TValue>> &
-  ColumnDefBase<TData, TValue> & {
-    accessorKey: string | keyof TData
-  }
+  accessorKey: (string & {}) | keyof TData
+}
+
+export type AccessorKeyColumnDef<
+  TData extends RowData,
+  TValue = unknown,
+> = AccessorKeyColumnDefBase<TData, TValue> &
+  Partial<ColumnIdentifiers<TData, TValue>>
 
 export type AccessorColumnDef<TData extends RowData, TValue = unknown> =
   | AccessorKeyColumnDef<TData, TValue>
@@ -259,26 +332,30 @@ export type ColumnDef<TData extends RowData, TValue = unknown> =
 
 export type ColumnDefResolved<
   TData extends RowData,
-  TValue = unknown
+  TValue = unknown,
 > = Partial<UnionToIntersection<ColumnDef<TData, TValue>>> & {
   accessorKey?: string
 }
 
-export type Column<TData extends RowData, TValue = unknown> = CoreColumn<
-  TData,
-  TValue
-> &
-  ColumnVisibilityColumn &
-  ColumnPinningColumn &
-  FiltersColumn<TData> &
-  SortingColumn<TData> &
-  GroupingColumn<TData> &
-  ColumnSizingColumn
+export interface Column<TData extends RowData, TValue = unknown>
+  extends CoreColumn<TData, TValue>,
+    ColumnVisibilityColumn,
+    ColumnPinningColumn,
+    FacetedColumn<TData>,
+    ColumnFiltersColumn<TData>,
+    GlobalFilterColumn,
+    SortingColumn<TData>,
+    GroupingColumn<TData>,
+    ColumnSizingColumn,
+    ColumnOrderColumn {}
 
-export type Cell<TData extends RowData, TValue> = CoreCell<TData, TValue> &
-  GroupingCell
+export interface Cell<TData extends RowData, TValue>
+  extends CoreCell<TData, TValue>,
+    GroupingCell {}
 
-export type Header<TData extends RowData, TValue> = CoreHeader<TData, TValue> &
-  ColumnSizingHeader
+export interface Header<TData extends RowData, TValue>
+  extends CoreHeader<TData, TValue>,
+    ColumnSizingHeader {}
 
-export type HeaderGroup<TData extends RowData> = CoreHeaderGroup<TData>
+export interface HeaderGroup<TData extends RowData>
+  extends CoreHeaderGroup<TData> {}

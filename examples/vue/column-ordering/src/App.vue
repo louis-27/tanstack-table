@@ -5,13 +5,12 @@ import {
   getCoreRowModel,
   useVueTable,
   type Column,
-  type ColumnDef,
   createColumnHelper,
 } from '@tanstack/vue-table'
 
 import { makeData, type Person } from './makeData'
 import { ref } from 'vue'
-import faker from '@faker-js/faker'
+import { faker } from '@faker-js/faker'
 
 const columnHelper = createColumnHelper<Person>()
 
@@ -84,7 +83,8 @@ const table = useVueTable({
   },
 
   onColumnOrderChange: order => {
-    columnOrder.value = order
+    columnOrder.value =
+      order instanceof Function ? order(columnOrder.value) : order
   },
   getCoreRowModel: getCoreRowModel(),
   debugTable: true,

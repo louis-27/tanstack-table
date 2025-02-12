@@ -65,12 +65,11 @@ export const rankings = {
   NO_MATCH: 0,
 } as const
 
-export type Ranking = typeof rankings[keyof typeof rankings]
+export type Ranking = (typeof rankings)[keyof typeof rankings]
 
 /**
  * Gets the highest ranking for value for the given item based on its values for the given keys
  * @param {*} item - the item to rank
- * @param {Array} keys - the keys to get values from the item for the ranking
  * @param {String} value - the value to rank against
  * @param {Object} options - options to control the ranking
  * @return {{rank: Number, accessorIndex: Number, accessorThreshold: Number}} - the highest ranking
@@ -112,7 +111,11 @@ export function rankItem<TItem>(
 
     let newRank = getMatchRanking(rankValue.itemValue, value, options)
 
-    const { minRanking, maxRanking, threshold = options.threshold } = rankValue.attributes
+    const {
+      minRanking,
+      maxRanking,
+      threshold = options.threshold,
+    } = rankValue.attributes
 
     if (newRank < minRanking && newRank >= rankings.MATCHES) {
       newRank = minRanking

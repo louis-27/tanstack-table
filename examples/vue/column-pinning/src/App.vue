@@ -9,12 +9,11 @@ import type {
   Column,
   ColumnOrderState,
   ColumnPinningState,
-  ColumnDef,
 } from '@tanstack/vue-table'
 
 import { makeData, type Person } from './makeData'
 import { ref } from 'vue'
-import faker from '@faker-js/faker'
+import { faker } from '@faker-js/faker'
 
 const data = ref(makeData(5000))
 
@@ -95,10 +94,12 @@ const table = useVueTable({
   },
 
   onColumnOrderChange: order => {
-    columnOrder.value = order
+    columnOrder.value =
+      order instanceof Function ? order(columnOrder.value) : order
   },
   onColumnPinningChange: pinning => {
-    columnPinning.value = pinning()
+    columnPinning.value =
+      pinning instanceof Function ? pinning(columnPinning.value) : pinning
   },
   getCoreRowModel: getCoreRowModel(),
   debugTable: true,

@@ -139,7 +139,7 @@ function App() {
     // Provide our updateData function to our table meta
     meta: {
       updateData: (rowIndex, columnId, value) => {
-        // Skip age index reset until after next rerender
+        // Skip page index reset until after next rerender
         skipAutoResetPageIndex()
         setData(old =>
           old.map((row, index) => {
@@ -246,6 +246,8 @@ function App() {
           | Go to page:
           <input
             type="number"
+            min="1"
+            max={table.getPageCount()}
             defaultValue={table.getState().pagination.pageIndex + 1}
             onChange={e => {
               const page = e.target.value ? Number(e.target.value) - 1 : 0

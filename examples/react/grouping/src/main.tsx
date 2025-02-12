@@ -28,6 +28,11 @@ function App() {
             accessorKey: 'firstName',
             header: 'First Name',
             cell: info => info.getValue(),
+            /**
+             * override the value used for row grouping
+             * (otherwise, defaults to the value derived from accessorKey / accessorFn)
+             */
+            getGroupingValue: row => `${row.firstName} ${row.lastName}`,
           },
           {
             accessorFn: row => row.lastName,
@@ -149,10 +154,10 @@ function App() {
                           background: cell.getIsGrouped()
                             ? '#0aff0082'
                             : cell.getIsAggregated()
-                            ? '#ffa50078'
-                            : cell.getIsPlaceholder()
-                            ? '#ff000042'
-                            : 'white',
+                              ? '#ffa50078'
+                              : cell.getIsPlaceholder()
+                                ? '#ff000042'
+                                : 'white',
                         },
                       }}
                     >
@@ -241,6 +246,8 @@ function App() {
           | Go to page:
           <input
             type="number"
+            min="1"
+            max={table.getPageCount()}
             defaultValue={table.getState().pagination.pageIndex + 1}
             onChange={e => {
               const page = e.target.value ? Number(e.target.value) - 1 : 0
